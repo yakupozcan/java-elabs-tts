@@ -1,0 +1,4 @@
+/app/src/main/java/elevenlabsApp/Main.java
+/app/src/main/java/elevenlabsApp/config/Configuration.java
+/app/src/main/java/elevenlabsApp/service/AudioPlayerService.java
+/app/src/main/java/elevenlabsApp/service/ElevenLabsService.java
