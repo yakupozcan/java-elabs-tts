@@ -1,9 +1,10 @@
-
 package elevenlabsApp;
 
 import elevenlabsApp.config.ApiKeysManager;
+import elevenlabsApp.config.SettingsManager;
 import elevenlabsApp.service.AudioFileManager;
 import elevenlabsApp.service.ElevenLabsService;
+import elevenlabsApp.view.SettingsDialog;
 
 import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.UnsupportedAudioFileException;
@@ -20,22 +21,24 @@ import java.util.concurrent.ExecutionException;
 
 public class Main {
 
+    // Services and Managers
+    private final SettingsManager settingsManager;
     private final ApiKeysManager apiKeysManager;
     private final ElevenLabsService elevenLabsService;
     private final AudioFileManager audioFileManager;
 
+    // UI Components
     private JFrame frame;
-    private JComboBox<String> apiKeyComboBox;
-    private JTextField voiceIdField;
     private JTextArea textArea;
     private JButton generateButton;
     private JButton playButton;
-    private JButton addApiKeyButton;
-    private JButton removeApiKeyButton;
+    private JButton settingsButton;
 
+    // State
     private Path lastGeneratedAudioPath;
 
     public Main() {
+        this.settingsManager = new SettingsManager();
         this.apiKeysManager = new ApiKeysManager();
         this.elevenLabsService = new ElevenLabsService();
         this.audioFileManager = new AudioFileManager();
@@ -48,149 +51,67 @@ public class Main {
     private void createAndShowGUI() {
         frame = new JFrame("ElevenLabs Anons Sistemi");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(600, 400);
+        frame.setSize(500, 300);
+        frame.setLocationRelativeTo(null);
 
-        JPanel mainPanel = new JPanel(new GridBagLayout());
+        // Main Panel
+        JPanel mainPanel = new JPanel(new BorderLayout(10, 10));
         mainPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(5, 5, 5, 5);
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-
-        // API Key Panel
-        gbc.gridx = 0;
-        gbc.gridy = 0;
-        gbc.gridwidth = 1;
-        mainPanel.add(new JLabel("API Key:"), gbc);
-
-        apiKeyComboBox = new JComboBox<>();
-        gbc.gridx = 1;
-        gbc.gridy = 0;
-        gbc.gridwidth = 2;
-        mainPanel.add(apiKeyComboBox, gbc);
-
-        addApiKeyButton = new JButton("Ekle");
-        gbc.gridx = 3;
-        gbc.gridy = 0;
-        gbc.gridwidth = 1;
-        mainPanel.add(addApiKeyButton, gbc);
-
-        removeApiKeyButton = new JButton("Sil");
-        gbc.gridx = 4;
-        gbc.gridy = 0;
-        gbc.gridwidth = 1;
-        mainPanel.add(removeApiKeyButton, gbc);
-
-        // Voice ID Panel
-        gbc.gridx = 0;
-        gbc.gridy = 1;
-        gbc.gridwidth = 1;
-        mainPanel.add(new JLabel("Voice ID:"), gbc);
-
-        voiceIdField = new JTextField("21m00Tcm4TlvDq8ikWAM"); // Default Rachel
-        gbc.gridx = 1;
-        gbc.gridy = 1;
-        gbc.gridwidth = 4;
-        mainPanel.add(voiceIdField, gbc);
 
         // Text Area
-        gbc.gridx = 0;
-        gbc.gridy = 2;
-        gbc.gridwidth = 5;
-        mainPanel.add(new JLabel("Anons Edilecek Metin:"), gbc);
-
-        textArea = new JTextArea(5, 30);
+        textArea = new JTextArea();
         textArea.setLineWrap(true);
         textArea.setWrapStyleWord(true);
         JScrollPane scrollPane = new JScrollPane(textArea);
-        gbc.gridx = 0;
-        gbc.gridy = 3;
-        gbc.gridwidth = 5;
-        gbc.fill = GridBagConstraints.BOTH;
-        gbc.weightx = 1.0;
-        gbc.weighty = 1.0;
-        mainPanel.add(scrollPane, gbc);
+        mainPanel.add(scrollPane, BorderLayout.CENTER);
 
-        // Buttons Panel
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        // Button Panel
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 0));
         generateButton = new JButton("Sesi Oluştur");
         playButton = new JButton("Oynat");
-        playButton.setEnabled(false); // Initially disabled
+        settingsButton = new JButton("Ayarlar");
+
+        playButton.setEnabled(false);
 
         buttonPanel.add(generateButton);
         buttonPanel.add(playButton);
-
-        gbc.gridx = 0;
-        gbc.gridy = 4;
-        gbc.gridwidth = 5;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.weighty = 0;
-        mainPanel.add(buttonPanel, gbc);
-
+        buttonPanel.add(settingsButton);
+        mainPanel.add(buttonPanel, BorderLayout.SOUTH);
 
         frame.getContentPane().add(mainPanel);
-        frame.setLocationRelativeTo(null);
-        frame.setVisible(true);
 
-        // Load API keys
-        loadApiKeys();
-
-        // Add Action Listeners
-        addApiKeyButton.addActionListener(e -> addApiKey());
-        removeApiKeyButton.addActionListener(e -> removeApiKey());
+        // Action Listeners
         generateButton.addActionListener(e -> generateSound());
         playButton.addActionListener(e -> playSound());
+        settingsButton.addActionListener(e -> openSettings());
+
+        frame.setVisible(true);
     }
 
-    private void loadApiKeys() {
-        apiKeyComboBox.removeAllItems();
-        apiKeysManager.getApiKeyNames().forEach(apiKeyComboBox::addItem);
-        if (apiKeyComboBox.getItemCount() == 0) {
-            addApiKey();
-        }
-    }
-
-    private void addApiKey() {
-        String keyName = JOptionPane.showInputDialog(frame, "API Key için bir isim girin:", "API Key Ekle", JOptionPane.PLAIN_MESSAGE);
-        if (keyName != null && !keyName.trim().isEmpty()) {
-            String keyValue = JOptionPane.showInputDialog(frame, keyName + " için API Key değerini girin:", "API Key Ekle", JOptionPane.PLAIN_MESSAGE);
-            if (keyValue != null && !keyValue.trim().isEmpty()) {
-                try {
-                    apiKeysManager.addApiKey(keyName, keyValue);
-                    loadApiKeys();
-                    apiKeyComboBox.setSelectedItem(keyName);
-                } catch (IOException e) {
-                    JOptionPane.showMessageDialog(frame, "API key kaydedilirken hata oluştu: " + e.getMessage(), "Hata", JOptionPane.ERROR_MESSAGE);
-                }
-            }
-        }
-    }
-
-    private void removeApiKey() {
-        String selectedKeyName = (String) apiKeyComboBox.getSelectedItem();
-        if (selectedKeyName != null) {
-            int confirm = JOptionPane.showConfirmDialog(frame, selectedKeyName + " isimli API key'i silmek istediğinizden emin misiniz?", "API Key Sil", JOptionPane.YES_NO_OPTION);
-            if (confirm == JOptionPane.YES_OPTION) {
-                try {
-                    apiKeysManager.removeApiKey(selectedKeyName);
-                    loadApiKeys();
-                } catch (IOException e) {
-                    JOptionPane.showMessageDialog(frame, "API key silinirken hata oluştu: " + e.getMessage(), "Hata", JOptionPane.ERROR_MESSAGE);
-                }
-            }
-        }
+    private void openSettings() {
+        SettingsDialog dialog = new SettingsDialog(frame, settingsManager, apiKeysManager, elevenLabsService);
+        dialog.setVisible(true);
+        // The dialog is modal, so code execution will pause here until it's closed.
+        // Settings are saved within the dialog itself.
     }
 
     private void generateSound() {
-        String selectedKeyName = (String) apiKeyComboBox.getSelectedItem();
-        if (selectedKeyName == null) {
-            JOptionPane.showMessageDialog(frame, "Lütfen bir API key seçin veya ekleyin.", "Uyarı", JOptionPane.WARNING_MESSAGE);
+        // 1. Get all settings from the SettingsManager
+        String apiKeyName = settingsManager.getProperty("selectedApiKeyName", null);
+        String voiceId = settingsManager.getProperty("selectedVoiceId", null);
+
+        if (apiKeyName == null || apiKeyName.isEmpty()) {
+            JOptionPane.showMessageDialog(frame, "Lütfen ayarlardan bir API anahtarı seçin.", "Hata", JOptionPane.ERROR_MESSAGE);
             return;
         }
-        String apiKey = apiKeysManager.getApiKey(selectedKeyName);
+        String apiKey = apiKeysManager.getApiKey(apiKeyName);
+         if (apiKey == null) {
+            JOptionPane.showMessageDialog(frame, "Seçili API anahtarı bulunamadı.", "Hata", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
 
-        String voiceId = voiceIdField.getText();
-        if (voiceId.trim().isEmpty()) {
-            JOptionPane.showMessageDialog(frame, "Lütfen bir Voice ID girin.", "Uyarı", JOptionPane.WARNING_MESSAGE);
+        if (voiceId == null || voiceId.isEmpty()) {
+            JOptionPane.showMessageDialog(frame, "Lütfen ayarlardan bir ses seçin.", "Hata", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
@@ -200,41 +121,51 @@ public class Main {
             return;
         }
 
-        generateButton.setEnabled(false);
-        generateButton.setText("Oluşturuluyor...");
-        playButton.setEnabled(false);
+        // Get voice settings
+        try {
+            double stability = Double.parseDouble(settingsManager.getProperty("stability", "0.75"));
+            double similarity = Double.parseDouble(settingsManager.getProperty("similarityBoost", "0.75"));
+            double style = Double.parseDouble(settingsManager.getProperty("style", "0.0"));
+            boolean useSpeakerBoost = Boolean.parseBoolean(settingsManager.getProperty("useSpeakerBoost", "true"));
+            ElevenLabsService.VoiceSettings voiceSettings = new ElevenLabsService.VoiceSettings(stability, similarity, style, useSpeakerBoost);
 
-        SwingWorker<Path, Void> worker = new SwingWorker<Path, Void>() {
-            @Override
-            protected Path doInBackground() throws Exception {
-                InputStream audioStream = elevenLabsService.textToSpeech(apiKey, text, voiceId);
+            // 2. Execute in background
+            generateButton.setEnabled(false);
+            generateButton.setText("Oluşturuluyor...");
+            playButton.setEnabled(false);
 
-                File runningDir = new File(Main.class.getProtectionDomain().getCodeSource().getLocation().toURI()).getParentFile();
-                Path outputPath = Paths.get(runningDir.getAbsolutePath(), UUID.randomUUID().toString() + ".wav");
-
-                audioFileManager.saveAudioStream(audioStream, outputPath);
-                return outputPath;
-            }
-
-            @Override
-            protected void done() {
-                try {
-                    lastGeneratedAudioPath = get();
-                    playButton.setEnabled(true);
-                    JOptionPane.showMessageDialog(frame, "Ses dosyası başarıyla oluşturuldu.", "Başarılı", JOptionPane.INFORMATION_MESSAGE);
-                } catch (ExecutionException e) {
-                    e.printStackTrace();
-                    Throwable cause = e.getCause();
-                    JOptionPane.showMessageDialog(frame, "Hata oluştu: " + cause.getMessage(), "Hata", JOptionPane.ERROR_MESSAGE);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                } finally {
-                    generateButton.setEnabled(true);
-                    generateButton.setText("Sesi Oluştur");
+            SwingWorker<Path, Void> worker = new SwingWorker<>() {
+                @Override
+                protected Path doInBackground() throws Exception {
+                    InputStream audioStream = elevenLabsService.textToSpeech(apiKey, text, voiceId, voiceSettings);
+                    File runningDir = new File(Main.class.getProtectionDomain().getCodeSource().getLocation().toURI()).getParentFile();
+                    Path outputPath = Paths.get(runningDir.getAbsolutePath(), "anons_" + UUID.randomUUID().toString().substring(0, 8) + ".wav");
+                    audioFileManager.saveAudioStream(audioStream, outputPath);
+                    return outputPath;
                 }
-            }
-        };
-        worker.execute();
+
+                @Override
+                protected void done() {
+                    try {
+                        lastGeneratedAudioPath = get();
+                        playButton.setEnabled(true);
+                        JOptionPane.showMessageDialog(frame, "Ses dosyası başarıyla oluşturuldu:\n" + lastGeneratedAudioPath.getFileName(), "Başarılı", JOptionPane.INFORMATION_MESSAGE);
+                    } catch (ExecutionException e) {
+                        e.printStackTrace();
+                        JOptionPane.showMessageDialog(frame, "Hata oluştu: " + e.getCause().getMessage(), "Hata", JOptionPane.ERROR_MESSAGE);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    } finally {
+                        generateButton.setEnabled(true);
+                        generateButton.setText("Sesi Oluştur");
+                    }
+                }
+            };
+            worker.execute();
+
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(frame, "Ses ayarları geçersiz. Lütfen ayarları kontrol edin.", "Hata", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     private void playSound() {

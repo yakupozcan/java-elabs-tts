@@ -1,28 +1,105 @@
 package elevenlabsApp.service;
 
 import okhttp3.*;
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 
 public class ElevenLabsService {
 
-    private static final String API_URL = "https://api.elevenlabs.io/v1/text-to-speech/{voice_id}";
+    private static final String BASE_URL = "https://api.elevenlabs.io/v1";
     private final OkHttpClient client = new OkHttpClient();
 
-    public InputStream textToSpeech(String apiKey, String text, String voiceId) throws IOException, ApiException {
-        String urlWithParams = API_URL.replace("{voice_id}", voiceId) + "?output_format=pcm_24000";
+    // Nested class for Voice Settings
+    public static class VoiceSettings {
+        public final double stability;
+        public final double similarityBoost;
+        public final double style;
+        public final boolean useSpeakerBoost;
+
+        public VoiceSettings(double stability, double similarityBoost, double style, boolean useSpeakerBoost) {
+            this.stability = stability;
+            this.similarityBoost = similarityBoost;
+            this.style = style;
+            this.useSpeakerBoost = useSpeakerBoost;
+        }
+    }
+
+    // Nested class for Voice
+    public static class Voice {
+        public final String voiceId;
+        public final String name;
+
+        public Voice(String voiceId, String name) {
+            this.voiceId = voiceId;
+            this.name = name;
+        }
+
+        @Override
+        public String toString() {
+            return name; // This will be displayed in the JComboBox
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Voice voice = (Voice) o;
+            return Objects.equals(voiceId, voice.voiceId);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(voiceId);
+        }
+    }
+
+    public List<Voice> getAvailableVoices(String apiKey) throws IOException, ApiException {
+        Request request = new Request.Builder()
+                .url(BASE_URL + "/voices")
+                .header("xi-api-key", apiKey)
+                .get()
+                .build();
+
+        try (Response response = client.newCall(request).execute()) {
+            if (!response.isSuccessful()) {
+                throw new ApiException("Failed to fetch voices: " + response.code() + " " + response.body().string());
+            }
+            String responseBody = response.body().string();
+            JSONObject jsonResponse = new JSONObject(responseBody);
+            JSONArray voicesArray = jsonResponse.getJSONArray("voices");
+            List<Voice> voices = new ArrayList<>();
+            for (int i = 0; i < voicesArray.length(); i++) {
+                JSONObject voiceJson = voicesArray.getJSONObject(i);
+                voices.add(new Voice(voiceJson.getString("voice_id"), voiceJson.getString("name")));
+            }
+            return voices;
+        }
+    }
+
+    public InputStream textToSpeech(String apiKey, String text, String voiceId, VoiceSettings settings) throws IOException, ApiException {
+        String url = BASE_URL + "/text-to-speech/" + voiceId + "?output_format=pcm_24000";
+
+        JSONObject voiceSettingsJson = new JSONObject();
+        voiceSettingsJson.put("stability", settings.stability);
+        voiceSettingsJson.put("similarity_boost", settings.similarityBoost);
+        voiceSettingsJson.put("style", settings.style);
+        voiceSettingsJson.put("use_speaker_boost", settings.useSpeakerBoost);
 
         JSONObject json = new JSONObject();
         json.put("text", text);
         json.put("model_id", "eleven_multilingual_v2");
-        json.put("voice_settings", new JSONObject().put("stability", 0.5).put("similarity_boost", 0.75));
+        json.put("voice_settings", voiceSettingsJson);
 
         RequestBody body = RequestBody.create(json.toString(), MediaType.get("application/json"));
 
         Request request = new Request.Builder()
-                .url(urlWithParams)
+                .url(url)
                 .header("xi-api-key", apiKey)
                 .header("Content-Type", "application/json")
                 .post(body)
@@ -32,7 +109,6 @@ public class ElevenLabsService {
             if (!response.isSuccessful()) {
                 throw new ApiException("ElevenLabs API request failed with code: " + response.code() + " and message: " + response.body().string());
             }
-            // Read the body into a byte array to allow the response to be closed.
             byte[] responseBytes = response.body().bytes();
             return new java.io.ByteArrayInputStream(responseBytes);
         }
