@@ -8,7 +8,9 @@ import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import java.awt.*;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
+import java.util.Properties;
 import java.util.concurrent.ExecutionException;
 
 public class SettingsDialog extends JDialog {
@@ -19,6 +21,7 @@ public class SettingsDialog extends JDialog {
 
     private JComboBox<String> apiKeyComboBox;
     private JComboBox<ElevenLabsService.Voice> voiceComboBox;
+    private JTextField voiceIdField;
     private JSlider stabilitySlider;
     private JSlider similaritySlider;
     private JSlider styleSlider;
@@ -85,11 +88,37 @@ public class SettingsDialog extends JDialog {
     }
 
     private JPanel createVoiceSelectionPanel() {
-        JPanel panel = new JPanel(new BorderLayout(10, 0));
+        JPanel panel = new JPanel(new GridBagLayout());
         panel.setBorder(BorderFactory.createTitledBorder("Ses Seçimi"));
-        panel.add(new JLabel("Ses:"), BorderLayout.WEST);
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+
+        gbc.gridx = 0; gbc.gridy = 0;
+        panel.add(new JLabel("Ses:"), gbc);
+
         voiceComboBox = new JComboBox<>();
-        panel.add(voiceComboBox, BorderLayout.CENTER);
+        gbc.gridx = 1; gbc.gridy = 0; gbc.weightx = 1.0;
+        panel.add(voiceComboBox, gbc);
+
+        voiceComboBox.addActionListener(e -> {
+            ElevenLabsService.Voice selectedVoice = (ElevenLabsService.Voice) voiceComboBox.getSelectedItem();
+            if (selectedVoice != null && selectedVoice.voiceId != null) {
+                voiceIdField.setText(selectedVoice.voiceId);
+            } else {
+                voiceIdField.setText("");
+            }
+        });
+
+        gbc.gridx = 0; gbc.gridy = 1;
+        panel.add(new JLabel("Voice ID:"), gbc);
+
+        voiceIdField = new JTextField();
+        voiceIdField.setEditable(false);
+        voiceIdField.setFont(new Font("Monospaced", Font.PLAIN, 12));
+        gbc.gridx = 1; gbc.gridy = 1;
+        panel.add(voiceIdField, gbc);
+
         return panel;
     }
 
@@ -124,8 +153,11 @@ public class SettingsDialog extends JDialog {
 
     private JPanel createButtonPanel() {
         JPanel panel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        JButton defaultsButton = new JButton("Varsayılanlar");
         JButton saveButton = new JButton("Kaydet");
         JButton cancelButton = new JButton("İptal");
+
+        defaultsButton.addActionListener(e -> loadDefaultSettings());
 
         saveButton.addActionListener(e -> {
             saveSettings();
@@ -137,6 +169,7 @@ public class SettingsDialog extends JDialog {
             dispose();
         });
 
+        panel.add(defaultsButton);
         panel.add(saveButton);
         panel.add(cancelButton);
         return panel;
@@ -262,5 +295,25 @@ public class SettingsDialog extends JDialog {
         settingsManager.setProperty("useSpeakerBoost", String.valueOf(speakerBoostCheckBox.isSelected()));
 
         settingsManager.save();
+    }
+
+    private void loadDefaultSettings() {
+        Properties defaultProps = new Properties();
+        try (InputStream input = getClass().getClassLoader().getResourceAsStream("default_settings.properties")) {
+            if (input == null) {
+                JOptionPane.showMessageDialog(this, "Varsayılan ayarlar dosyası bulunamadı.", "Hata", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            defaultProps.load(input);
+
+            stabilitySlider.setValue((int) (Double.parseDouble(defaultProps.getProperty("stability", "0.75")) * 100));
+            similaritySlider.setValue((int) (Double.parseDouble(defaultProps.getProperty("similarityBoost", "0.75")) * 100));
+            styleSlider.setValue((int) (Double.parseDouble(defaultProps.getProperty("style", "0.0")) * 100));
+            speakerBoostCheckBox.setSelected(Boolean.parseBoolean(defaultProps.getProperty("useSpeakerBoost", "true")));
+
+        } catch (IOException | NumberFormatException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Varsayılan ayarlar yüklenirken bir hata oluştu.", "Hata", JOptionPane.ERROR_MESSAGE);
+        }
     }
 }
