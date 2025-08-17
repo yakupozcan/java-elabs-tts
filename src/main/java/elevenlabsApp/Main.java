@@ -1,8 +1,15 @@
 
 package elevenlabsApp;
 
-import javax.swing.*;
-import java.awt.*;
+
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
+import java.awt.BorderLayout;
+import java.awt.Font;
+
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.InputStream;
@@ -28,6 +35,7 @@ public class Main {
     }
 
     private static void createAndShowGUI() {
+
         JFrame frame = new JFrame("ElevenLabs Text-to-Speech");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(400, 150);
@@ -52,6 +60,7 @@ public class Main {
         frame.getContentPane().add(panel);
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
+
 
         anonsButonu.addActionListener(new ActionListener() {
             @Override
@@ -90,5 +99,6 @@ public class Main {
         } catch (UnsupportedAudioFileException | IOException | LineUnavailableException e) {
             e.printStackTrace();
         }
+
     }
 }
