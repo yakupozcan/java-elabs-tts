@@ -1,22 +1,18 @@
-package elevenlabsApp;
+package elevenlabsApp.service;
 
-import okhttp3.MediaType;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
-import okhttp3.Response;
+import okhttp3.*;
 import org.json.JSONObject;
 
 import java.io.IOException;
 import java.io.InputStream;
 
-public class ElevenLabsAPI {
+public class ElevenLabsService {
 
     private static final String API_URL = "https://api.elevenlabs.io/v1/text-to-speech/{voice_id}";
-    private static final String VOICE_ID = "21m00Tcm4TlvDq8ikWAM"; // Rachel's voice ID as an example
+    private static final String VOICE_ID = "21m00Tcm4TlvDq8ikWAM"; // Rachel
     private final OkHttpClient client = new OkHttpClient();
 
-    public InputStream textToSpeech(String text, String apiKey) throws IOException {
+    public InputStream textToSpeech(String apiKey, String text) throws IOException, ApiException {
         String url = API_URL.replace("{voice_id}", VOICE_ID);
 
         JSONObject json = new JSONObject();
@@ -33,12 +29,19 @@ public class ElevenLabsAPI {
                 .post(body)
                 .build();
 
-        Response response = client.newCall(request).execute();
-
-        if (!response.isSuccessful()) {
-            throw new IOException("Unexpected code " + response);
+        try (Response response = client.newCall(request).execute()) {
+            if (!response.isSuccessful()) {
+                throw new ApiException("ElevenLabs API request failed with code: " + response.code() + " and message: " + response.body().string());
+            }
+            // Read the body into a byte array to allow the response to be closed.
+            byte[] responseBytes = response.body().bytes();
+            return new java.io.ByteArrayInputStream(responseBytes);
         }
+    }
 
-        return response.body().byteStream();
+    public static class ApiException extends Exception {
+        public ApiException(String message) {
+            super(message);
+        }
     }
 }
