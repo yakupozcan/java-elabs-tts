@@ -13,7 +13,7 @@ public class ElevenLabsService {
     private final OkHttpClient client = new OkHttpClient();
 
     public InputStream textToSpeech(String apiKey, String text) throws IOException, ApiException {
-        String url = API_URL.replace("{voice_id}", VOICE_ID);
+        String urlWithParams = API_URL.replace("{voice_id}", VOICE_ID) + "?output_format=pcm_24000";
 
         JSONObject json = new JSONObject();
         json.put("text", text);
@@ -23,7 +23,7 @@ public class ElevenLabsService {
         RequestBody body = RequestBody.create(json.toString(), MediaType.get("application/json"));
 
         Request request = new Request.Builder()
-                .url(url)
+                .url(urlWithParams)
                 .header("xi-api-key", apiKey)
                 .header("Content-Type", "application/json")
                 .post(body)
