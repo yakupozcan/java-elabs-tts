@@ -9,11 +9,10 @@ import java.io.InputStream;
 public class ElevenLabsService {
 
     private static final String API_URL = "https://api.elevenlabs.io/v1/text-to-speech/{voice_id}";
-    private static final String VOICE_ID = "21m00Tcm4TlvDq8ikWAM"; // Rachel
     private final OkHttpClient client = new OkHttpClient();
 
-    public InputStream textToSpeech(String apiKey, String text) throws IOException, ApiException {
-        String urlWithParams = API_URL.replace("{voice_id}", VOICE_ID) + "?output_format=pcm_24000";
+    public InputStream textToSpeech(String apiKey, String text, String voiceId) throws IOException, ApiException {
+        String urlWithParams = API_URL.replace("{voice_id}", voiceId) + "?output_format=pcm_24000";
 
         JSONObject json = new JSONObject();
         json.put("text", text);
