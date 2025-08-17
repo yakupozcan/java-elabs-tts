@@ -58,6 +58,15 @@ public class Main {
         JPanel mainPanel = new JPanel(new BorderLayout(10, 10));
         mainPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
+        // Initialize buttons early
+        generateButton = new JButton("Sesi Oluştur");
+        playButton = new JButton("Oynat");
+        settingsButton = new JButton("Ayarlar");
+        playButton.setEnabled(false);
+
+        // Header Panel
+        mainPanel.add(createHeaderPanel(), BorderLayout.NORTH);
+
         // Text Area
         textArea = new JTextArea();
         textArea.setLineWrap(true);
@@ -65,18 +74,11 @@ public class Main {
         JScrollPane scrollPane = new JScrollPane(textArea);
         mainPanel.add(scrollPane, BorderLayout.CENTER);
 
-        // Button Panel
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 0));
-        generateButton = new JButton("Sesi Oluştur");
-        playButton = new JButton("Oynat");
-        settingsButton = new JButton("Ayarlar");
-
-        playButton.setEnabled(false);
-
-        buttonPanel.add(generateButton);
-        buttonPanel.add(playButton);
-        buttonPanel.add(settingsButton);
-        mainPanel.add(buttonPanel, BorderLayout.SOUTH);
+        // Button Panel (Generate and Play)
+        JPanel bottomButtonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 0));
+        bottomButtonPanel.add(generateButton);
+        bottomButtonPanel.add(playButton);
+        mainPanel.add(bottomButtonPanel, BorderLayout.SOUTH);
 
         frame.getContentPane().add(mainPanel);
 
@@ -86,6 +88,32 @@ public class Main {
         settingsButton.addActionListener(e -> openSettings());
 
         frame.setVisible(true);
+    }
+
+    private JPanel createHeaderPanel() {
+        JPanel headerPanel = new JPanel(new BorderLayout(10, 0));
+        headerPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 0));
+
+        // 1. Logo
+        java.net.URL logoUrl = getClass().getResource("/logo.gif");
+        JLabel logoLabel;
+        if (logoUrl != null) {
+            logoLabel = new JLabel(new ImageIcon(logoUrl));
+        } else {
+            logoLabel = new JLabel(" "); // Prevents error if logo not found
+        }
+        headerPanel.add(logoLabel, BorderLayout.WEST);
+
+        // 2. Title
+        JLabel titleLabel = new JLabel("<html><div style='text-align: center;'><b>Anons Sistemi</b></div></html>");
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 20));
+        titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        headerPanel.add(titleLabel, BorderLayout.CENTER);
+
+        // 3. Settings Button
+        headerPanel.add(settingsButton, BorderLayout.EAST);
+
+        return headerPanel;
     }
 
     private void openSettings() {
