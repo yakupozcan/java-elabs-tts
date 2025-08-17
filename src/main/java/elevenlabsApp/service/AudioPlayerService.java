@@ -8,8 +8,8 @@ public class AudioPlayerService {
 
     public void play(InputStream inputStream) throws LineUnavailableException, IOException, UnsupportedAudioFileException {
         // Define the audio format for pcm_24000
-        // Sample Rate: 24000 Hz, Sample Size: 16 bits, Channels: 1 (Mono), Signed: true, Big Endian: true
-        AudioFormat format = new AudioFormat(24000, 16, 1, true, true);
+        // Sample Rate: 24000 Hz, Sample Size: 16 bits, Channels: 1 (Mono), Signed: true, Big Endian: false (Little Endian)
+        AudioFormat format = new AudioFormat(24000, 16, 1, true, false);
 
         // The total length of the audio data in bytes.
         long length = inputStream.available();
