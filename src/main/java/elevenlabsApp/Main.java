@@ -98,7 +98,10 @@ public class Main {
         java.net.URL logoUrl = getClass().getResource("/logo.gif");
         JLabel logoLabel;
         if (logoUrl != null) {
-            logoLabel = new JLabel(new ImageIcon(logoUrl));
+            ImageIcon originalIcon = new ImageIcon(logoUrl);
+            Image originalImage = originalIcon.getImage();
+            Image scaledImage = originalImage.getScaledInstance(-1, 48, Image.SCALE_SMOOTH);
+            logoLabel = new JLabel(new ImageIcon(scaledImage));
         } else {
             logoLabel = new JLabel(" "); // Prevents error if logo not found
         }
@@ -106,7 +109,7 @@ public class Main {
 
         // 2. Title
         JLabel titleLabel = new JLabel("<html><div style='text-align: center;'><b>Anons Sistemi</b></div></html>");
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 20));
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 24));
         titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
         headerPanel.add(titleLabel, BorderLayout.CENTER);
 
