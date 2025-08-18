@@ -165,7 +165,7 @@ public class Main {
             generateButton.setText("Oluşturuluyor...");
             playButton.setEnabled(false);
 
-            SwingWorker<Path, Void> worker = new SwingWorker<>() {
+            SwingWorker<Path, Void> worker = new SwingWorker<Path, Void>() {
                 @Override
                 protected Path doInBackground() throws Exception {
                     InputStream audioStream = elevenLabsService.textToSpeech(apiKey, text, voiceId, voiceSettings);

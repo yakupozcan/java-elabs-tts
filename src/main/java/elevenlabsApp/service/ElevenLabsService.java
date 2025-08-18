@@ -67,10 +67,10 @@ public class ElevenLabsService {
                 .build();
 
         try (Response response = client.newCall(request).execute()) {
-            if (!response.isSuccessful()) {
-                throw new ApiException("Failed to fetch voices: " + response.code() + " " + response.body().string());
-            }
             String responseBody = response.body().string();
+            if (!response.isSuccessful()) {
+                throw new ApiException("Failed to fetch voices: " + response.code() + " " + responseBody);
+            }
             JSONObject jsonResponse = new JSONObject(responseBody);
             JSONArray voicesArray = jsonResponse.getJSONArray("voices");
             List<Voice> voices = new ArrayList<>();
@@ -106,10 +106,10 @@ public class ElevenLabsService {
                 .build();
 
         try (Response response = client.newCall(request).execute()) {
-            if (!response.isSuccessful()) {
-                throw new ApiException("ElevenLabs API request failed with code: " + response.code() + " and message: " + response.body().string());
-            }
             byte[] responseBytes = response.body().bytes();
+            if (!response.isSuccessful()) {
+                throw new ApiException("ElevenLabs API request failed with code: " + response.code() + " and message: " + new String(responseBytes));
+            }
             return new java.io.ByteArrayInputStream(responseBytes);
         }
     }
