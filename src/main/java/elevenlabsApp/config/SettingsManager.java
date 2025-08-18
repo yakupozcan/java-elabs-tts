@@ -11,23 +11,30 @@ public class SettingsManager {
 
     private static final String SETTINGS_FILE_NAME = "settings.properties";
     private final Properties properties;
-    private final File settingsFile;
+    private File settingsFile;
 
     public SettingsManager() {
+        this.properties = new Properties();
         try {
             this.settingsFile = new File(new File(getClass().getProtectionDomain().getCodeSource().getLocation().toURI()).getParentFile(), SETTINGS_FILE_NAME);
-            this.properties = new Properties();
             if (settingsFile.exists()) {
                 try (FileInputStream in = new FileInputStream(settingsFile)) {
                     properties.load(in);
                 }
             }
-        } catch (IOException | URISyntaxException e) {
-            throw new RuntimeException("Failed to initialize SettingsManager", e);
+        } catch (IOException | URISyntaxException | SecurityException e) {
+            System.err.println("Warning: Could not read settings file. Using default settings. Error: " + e.getMessage());
+            this.settingsFile = null; // Indicate that we cannot save.
         }
     }
 
     public void save() {
+        if (settingsFile == null) {
+            System.err.println("Warning: Settings file location is read-only or inaccessible. Settings cannot be saved.");
+            // Optionally, show a dialog to the user.
+            // JOptionPane.showMessageDialog(null, "Ayarlar dosyası konumu salt okunur veya erişilemez. Ayarlar kaydedilemiyor.", "Kaydetme Hatası", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
         try (FileOutputStream out = new FileOutputStream(settingsFile)) {
             properties.store(out, "ElevenLabs Anons Sistemi Settings");
         } catch (IOException e) {

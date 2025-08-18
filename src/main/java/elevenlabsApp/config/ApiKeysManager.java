@@ -14,19 +14,20 @@ public class ApiKeysManager {
 
     private static final String PROPERTIES_FILE_NAME = "apikeys.properties";
     private final Properties properties;
-    private final File propertiesFile;
+    private File propertiesFile;
 
     public ApiKeysManager() {
+        this.properties = new Properties();
         try {
             this.propertiesFile = getPropertiesFile();
-            this.properties = new Properties();
             if (propertiesFile.exists()) {
                 try (FileInputStream in = new FileInputStream(propertiesFile)) {
                     properties.load(in);
                 }
             }
-        } catch (IOException | URISyntaxException e) {
-            throw new RuntimeException("Failed to initialize ApiKeysManager", e);
+        } catch (IOException | URISyntaxException | SecurityException e) {
+            System.err.println("Warning: Could not read API keys file. Running with empty API keys. Error: " + e.getMessage());
+            this.propertiesFile = null; // Indicate that we cannot save.
         }
     }
 
@@ -57,6 +58,9 @@ public class ApiKeysManager {
     }
 
     private void saveProperties() throws IOException {
+        if (propertiesFile == null) {
+            throw new IOException("API anahtar dosyası konumu salt okunur veya erişilemez. Ayarlar kaydedilemiyor.");
+        }
         try (FileOutputStream out = new FileOutputStream(propertiesFile)) {
             properties.store(out, "ElevenLabs API Keys");
         }
