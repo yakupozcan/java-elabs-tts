@@ -95,7 +95,7 @@ public class Main {
         headerPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 0));
 
         // 1. Logo
-        java.net.URL logoUrl = getClass().getResource("/logo.gif");
+        java.net.URL logoUrl = getClass().getResource("/logo.png");
         JLabel logoLabel;
         if (logoUrl != null) {
             ImageIcon originalIcon = new ImageIcon(logoUrl);
@@ -108,8 +108,8 @@ public class Main {
         headerPanel.add(logoLabel, BorderLayout.WEST);
 
         // 2. Title
-        JLabel titleLabel = new JLabel("<html><div style='text-align: center;'><b>Anons Sistemi</b></div></html>");
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 24));
+        JLabel titleLabel = new JLabel("<html><div style='text-align: center;'><b>NKÜ HASTANESİ BİLGİ İŞLEM ANONS SİSTEMİ</b></div></html>");
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 22));
         titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
         headerPanel.add(titleLabel, BorderLayout.CENTER);
 
