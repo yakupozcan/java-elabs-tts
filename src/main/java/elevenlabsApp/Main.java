@@ -170,7 +170,8 @@ public class Main {
                 protected Path doInBackground() throws Exception {
                     InputStream audioStream = elevenLabsService.textToSpeech(apiKey, text, voiceId, voiceSettings);
                     File runningDir = new File(Main.class.getProtectionDomain().getCodeSource().getLocation().toURI()).getParentFile();
-                    Path outputPath = Paths.get(runningDir.getAbsolutePath(), "anons_" + UUID.randomUUID().toString().substring(0, 8) + ".wav");
+                    String fileName = generateFileNameFromText(text);
+                    Path outputPath = Paths.get(runningDir.getAbsolutePath(), fileName);
                     audioFileManager.saveAudioStream(audioStream, outputPath);
                     return outputPath;
                 }
@@ -208,5 +209,14 @@ public class Main {
                 JOptionPane.showMessageDialog(frame, "Ses dosyası oynatılırken hata oluştu: " + e.getMessage(), "Hata", JOptionPane.ERROR_MESSAGE);
             }
         }
+    }
+
+    private String generateFileNameFromText(String text) {
+        String sanitizedText = text.replaceAll("[^a-zA-Z0-9\\s]", "").trim();
+        if (sanitizedText.isEmpty()) {
+            return "anons_" + UUID.randomUUID().toString().substring(0, 8) + ".wav";
+        }
+        String truncatedText = sanitizedText.length() > 50 ? sanitizedText.substring(0, 50) : sanitizedText;
+        return truncatedText.replace(' ', '_') + "_" + UUID.randomUUID().toString().substring(0, 4) + ".wav";
     }
 }
