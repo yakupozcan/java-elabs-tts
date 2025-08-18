@@ -14,10 +14,12 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Stream;
 
 public class Main {
 
@@ -49,6 +51,8 @@ public class Main {
     }
 
     private void createAndShowGUI() {
+        cleanupOldAudioFiles();
+
         frame = new JFrame("ElevenLabs Anons Sistemi");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(500, 300);
@@ -169,9 +173,16 @@ public class Main {
                 @Override
                 protected Path doInBackground() throws Exception {
                     InputStream audioStream = elevenLabsService.textToSpeech(apiKey, text, voiceId, voiceSettings);
+
                     File runningDir = new File(Main.class.getProtectionDomain().getCodeSource().getLocation().toURI()).getParentFile();
+                    Path audioDir = Paths.get(runningDir.getAbsolutePath(), "Anons Sesler");
+                    if (!Files.exists(audioDir)) {
+                        Files.createDirectories(audioDir);
+                    }
+
                     String fileName = generateFileNameFromText(text);
-                    Path outputPath = Paths.get(runningDir.getAbsolutePath(), fileName);
+                    Path outputPath = audioDir.resolve(fileName);
+
                     audioFileManager.saveAudioStream(audioStream, outputPath);
                     return outputPath;
                 }
@@ -218,5 +229,34 @@ public class Main {
         }
         String truncatedText = sanitizedText.length() > 50 ? sanitizedText.substring(0, 50) : sanitizedText;
         return truncatedText.replace(' ', '_') + "_" + UUID.randomUUID().toString().substring(0, 4) + ".wav";
+    }
+
+    private void cleanupOldAudioFiles() {
+        try {
+            File runningDir = new File(Main.class.getProtectionDomain().getCodeSource().getLocation().toURI()).getParentFile();
+            Path audioDir = Paths.get(runningDir.getAbsolutePath(), "Anons Sesler");
+
+            if (!Files.exists(audioDir)) {
+                return; // Klasör yoksa silinecek bir şey de yoktur.
+            }
+
+            long cutoff = System.currentTimeMillis() - (24 * 60 * 60 * 1000); // 24 saat öncesi
+
+            try (Stream<Path> stream = Files.list(audioDir)) {
+                stream.filter(path -> path.toString().toLowerCase().endsWith(".wav"))
+                      .forEach(path -> {
+                          try {
+                              if (Files.getLastModifiedTime(path).toMillis() < cutoff) {
+                                  Files.delete(path);
+                                  System.out.println("Silindi (eski): " + path);
+                              }
+                          } catch (IOException e) {
+                              System.err.println("Eski dosya silinemedi: " + path + " - " + e.getMessage());
+                          }
+                      });
+            }
+        } catch (URISyntaxException | IOException e) {
+            System.err.println("Eski dosyalar temizlenirken bir hata oluştu: " + e.getMessage());
+        }
     }
 }
