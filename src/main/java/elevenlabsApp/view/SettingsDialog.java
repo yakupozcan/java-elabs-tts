@@ -224,7 +224,7 @@ public class SettingsDialog extends JDialog {
         voiceComboBox.removeAllItems();
         voiceComboBox.addItem(new ElevenLabsService.Voice(null, "Sesler yükleniyor..."));
 
-        SwingWorker<List<ElevenLabsService.Voice>, Void> worker = new SwingWorker<>() {
+        SwingWorker<List<ElevenLabsService.Voice>, Void> worker = new SwingWorker<List<ElevenLabsService.Voice>, Void>() {
             @Override
             protected List<ElevenLabsService.Voice> doInBackground() throws Exception {
                 return elevenLabsService.getAvailableVoices(apiKey);
